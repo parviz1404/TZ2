@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rasta Bazaar — تجهیزات مهندسی دست‌دوم</title>
 
+<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2563eb">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -39,7 +40,7 @@ h1{margin:0; font-size:20px; font-weight:900}
 .btn-outline{background:#fff; color:var(--primary); border:2px solid var(--primary)}
 .wrap{max-width:1100px; margin:20px auto; padding:0 16px}
 
-/* Card */
+/* Sections */
 .section{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl); box-shadow:var(--shadow); overflow:hidden}
 .sec-header{display:flex; align-items:center; gap:10px; padding:12px 16px; background:linear-gradient(180deg,#fff,#f9fbff); border-bottom:1px solid var(--border)}
 .sec-title{margin:0; font-size:16px; font-weight:900; color:#1f2937}
@@ -66,6 +67,10 @@ textarea{min-height:92px; resize:vertical; font-weight:600}
 select{border:1px solid var(--border); border-radius:10px; padding:8px 10px; background:#fff; font-weight:700}
 input[type="search"]{width:100%; border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:#fff; font-weight:700}
 
+/* Tabs */
+.tabs{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+.tabs .btn{padding:8px 12px}
+
 /* Grid of items */
 .grid{display:grid; gap:14px; grid-template-columns:repeat(3,minmax(220px,1fr))}
 @media (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(220px,1fr))}}
@@ -90,6 +95,9 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
 .modal .hd{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); background:#f9fbff}
 .modal .bd{padding:16px}
 .modal .ft{padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end}
+
+/* Banner for missing config */
+.banner{max-width:1100px; margin:14px auto 0; padding:12px 16px; color:#1f2937; background:#fff8c5; border:1px solid #fde68a; border-radius:12px}
 </style>
 </head>
 <body>
@@ -118,19 +126,24 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
         <input id="phone" type="text" inputmode="tel" placeholder="مثلاً 09123456789" style="direction:ltr; text-align:left">
       </div>
       <p class="note" style="margin-top:8px">
-        نسخهٔ فعلی بدون بک‌اند است؛ شماره فقط برای تفکیک آگهی‌های شما روی همین دستگاه استفاده می‌شود.
+        کد تأیید (OTP) از طریق Firebase ارسال می‌شود. لطفاً دامنه GitHub Pages خود را در Authorized Domains اضافه کنید.
       </p>
       <div id="authErr" class="err">شماره معتبر وارد کنید (حداقل 10 رقم).</div>
     </div>
     <div class="ft">
-      <button id="authOk" class="btn">تأیید و ورود</button>
+      <button id="authOk" class="btn">ارسال کد و ورود</button>
     </div>
   </div>
 </div>
 
+<!-- Tabs + Search -->
 <main class="wrap">
+  <div id="cfgBanner" class="banner" style="display:none">
+    ⚠️ ابتدا <strong>Firebase config</strong> را در انتهای فایل پر کنید؛ سپس صفحه را دوباره باز کنید.
+  </div>
+
   <!-- Form -->
-  <section class="section">
+  <section class="section" style="margin-top:14px">
     <div class="sec-header">
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h12M4 17h10" stroke="#334155" stroke-width="1.8" stroke-linecap="round"/></svg>
       <h2 class="sec-title">ثبت آگهی</h2>
@@ -159,19 +172,29 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
         </div>
       </div>
       <div class="row">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:800">
+          <input id="isPublic" type="checkbox" checked>
+          انتشار عمومی (نمایش در «همهٔ آگهی‌ها»)
+        </label>
+      </div>
+      <div class="row">
         <button id="addBtn" class="btn">ثبت آگهی</button>
         <div id="err" class="err">برای ثبت آگهی، ابتدا وارد شوید؛ سپس عکس و قیمت را کامل کنید.</div>
       </div>
     </div>
   </section>
 
-  <!-- Toolbar -->
+  <!-- Toolbar + Tabs -->
   <section class="section" style="margin-top:16px">
     <div class="sec-header">
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke="#059669" stroke-width="1.8" fill="none"/></svg>
-      <h2 class="sec-title">آگهی‌های شما</h2>
+      <h2 class="sec-title">فهرست آگهی‌ها</h2>
     </div>
     <div class="sec-body">
+      <div class="tabs">
+        <button id="tabPublic"  class="btn">همهٔ آگهی‌ها (عمومی)</button>
+        <button id="tabMine"    class="btn-outline">آگهی‌های من</button>
+      </div>
       <div class="toolbar">
         <input id="q" class="search" type="search" placeholder="جست‌وجو در عنوان/توضیح...">
         <select id="sort">
@@ -188,87 +211,93 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
   <section class="section" style="margin-top:12px">
     <div class="sec-body">
       <div id="grid" class="grid"></div>
-      <p id="emptyNote" class="note" style="display:none; padding:10px 2px">هنوز آگهی‌ای ثبت نشده است.</p>
+      <p id="emptyNote" class="note" style="display:none; padding:10px 2px">آگهی‌ای یافت نشد.</p>
     </div>
   </section>
 </main>
 
-<footer>
-  داده‌های شما روی همین دستگاه ذخیره می‌شود. برای اشتراک‌گذاری بین کاربران، در نسخهٔ بعدی اتصال به سرور/کلاد اضافه می‌کنیم.
+<footer class="wrap" style="margin-bottom:28px">
+  داده‌ها در <strong>Cloud Firestore</strong> و تصاویر در <strong>Firebase Storage</strong> ذخیره می‌شوند. برای نمایش عمومی، گزینهٔ «انتشار عمومی» را فعال بگذارید.
 </footer>
 
+<!-- reCAPTCHA container (invisible) -->
+<div id="recaptcha-container" style="display:none"></div>
+
+<!-- ثبت Service Worker -->
 <script>
-/*** Utils: Persian digits & price formatting ***/
-const fa=/[۰-۹]/g, ar=/[٠-٩]/g;
-const maps={fa:{'۰':0,'۱':1,'۲':2,'۳':3,'۴':4,'۵':5,'۶':6,'۷':7,'۸':8,'۹':9},
-            ar:{'٠':0,'١':1,'٢':2,'٣':3,'٤':4,'٥':5,'٦':6,'٧':7,'٨':8,'٩':9}};
-function toNumber(v){
-  if(v==null) return NaN;
-  let s=String(v).trim().replace(/\s+/g,'').replace(/,/g,'').replace(/٬/g,'');
-  s=s.replace(fa,d=>maps.fa[d]).replace(ar,d=>maps.ar[d]);
-  return Number(s);
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js'));
 }
-function formatPrice(n){ if(!isFinite(n)) return '—'; return n.toLocaleString('fa-IR'); }
+</script>
 
-/*** Image compression to dataURL ***/
-function compressImage(file, maxW=1200, quality=0.82){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload = ()=>{
-      const img=new Image();
-      img.onload=()=>{
-        const scale = Math.min(1, maxW / img.width);
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas=document.createElement('canvas');
-        canvas.width=w; canvas.height=h;
-        const ctx=canvas.getContext('2d');
-        ctx.drawImage(img,0,0,w,h);
-        let url; try{ url=canvas.toDataURL('image/jpeg', quality); } catch(e){ url=canvas.toDataURL(); }
-        resolve(url);
-      };
-      img.onerror=()=>reject(new Error('bad image'));
-      img.src=reader.result;
-    };
-    reader.onerror=()=>reject(new Error('read error'));
-    reader.readAsDataURL(file);
-  });
+<!-- ===== Firebase نسخه OTP + Cloud (ماژولار) ===== -->
+<script type="module">
+/* ===== Firebase SDK (v10 modular) ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+/* ===== تنظیمات Firebase — اینجا را از کنسول کپی کن ===== */
+const firebaseConfig = {
+  // TODO: پس از ساخت پروژه: apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId
+};
+const cfgBanner = document.getElementById('cfgBanner');
+if (!firebaseConfig || !firebaseConfig.apiKey) {
+  cfgBanner.style.display = 'block';
+  throw new Error('Firebase config missing');
 }
 
-/*** Storage (per-phone) ***/
-const KEY_PREFIX='rasta-bazaar-items-v1::';
-const AUTH_KEY='rasta-bazaar-auth';
-function currentPhone(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch(e){ return null; } }
-function setPhone(p){ localStorage.setItem(AUTH_KEY, JSON.stringify(p)); }
-function keyFor(phone){ return KEY_PREFIX + phone; }
-function loadItems(phone){
-  if(!phone) return [];
-  try{ return JSON.parse(localStorage.getItem(keyFor(phone))||'[]'); }catch(e){ return []; }
-}
-function saveItems(phone, items){
-  if(!phone) return;
-  localStorage.setItem(keyFor(phone), JSON.stringify(items));
-}
+/* ===== Init ===== */
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const stg  = getStorage(app);
 
-/*** DOM refs ***/
+/* ===== DOM refs ===== */
 const $=id=>document.getElementById(id);
-const grid=$('grid'), emptyNote=$('emptyNote');
-const inpTitle=$('title'), inpPrice=$('price'), inpPhoto=$('photo'), inpDesc=$('desc');
-const q=$('q'), sort=$('sort'), err=$('err');
+const inpTitle=$('title'), inpPrice=$('price'), inpPhoto=$('photo'), inpDesc=$('desc'), isPublic=$('isPublic');
+const addBtn=$('addBtn'), err=$('err');
+const q=$('q'), sort=$('sort'), grid=$('grid'), emptyNote=$('emptyNote');
 
 const loginBtn=$('loginBtn'), logoutBtn=$('logoutBtn'), userBadge=$('userBadge'), userPhoneEl=$('userPhone');
 const authModal=$('authModal'), authOk=$('authOk'), authClose=$('authClose'), authErr=$('authErr'), phoneInp=$('phone');
 
-let PHONE = currentPhone();
+const tabPublic=$('tabPublic'), tabMine=$('tabMine');
 
-/*** Auth UI ***/
-function refreshAuthUI(){
-  if(PHONE){
+/* ===== Utils ===== */
+const fa=/[۰-۹]/g, ar=/[٠-٩]/g;
+const maps={fa:{'۰':0,'۱':1,'۲':2,'۳':3,'۴':4,'۵':5,'۶':6,'۷':7,'۸':8,'۹':9}, ar:{'٠':0,'١':1,'٢':2,'٣':3,'٤':4,'٥':5,'٦':6,'٧':7,'٨':8,'٩':9}};
+function toNumber(v){ if(v==null) return NaN; let s=String(v).trim().replace(/\s+/g,'').replace(/,/g,'').replace(/٬/g,''); s=s.replace(fa,d=>maps.fa[d]).replace(ar,d=>maps.ar[d]); return Number(s); }
+function formatPrice(n){ if(!isFinite(n)) return '—'; return n.toLocaleString('fa-IR'); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function compressImage(file, maxW=1200, quality=0.82){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{ const img=new Image(); img.onload=()=>{
+      const scale=Math.min(1, maxW/img.width), w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+      const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      let url; try{ url=canvas.toDataURL('image/jpeg', quality);}catch(e){url=canvas.toDataURL();}
+      resolve(url);
+    }; img.onerror=()=>reject(new Error('bad image')); img.src=reader.result; };
+    reader.onerror=()=>reject(new Error('read error')); reader.readAsDataURL(file);
+  });
+}
+async function dataURLtoBlob(dataURL){ const res=await fetch(dataURL); return await res.blob(); }
+
+/* ===== Auth (Phone + OTP) ===== */
+let currentUser = null;
+let confirmation = null;
+let recaptcha = null;
+
+function showAuthUI(user){
+  if(user){
     userBadge.style.display='inline-flex';
-    userPhoneEl.textContent = PHONE;
+    userPhoneEl.textContent = user.phoneNumber || 'ورود';
     loginBtn.style.display='none';
     logoutBtn.style.display='inline-block';
-  }else{
+  } else {
     userBadge.style.display='none';
     userPhoneEl.textContent = '';
     loginBtn.style.display='inline-block';
@@ -276,126 +305,173 @@ function refreshAuthUI(){
   }
 }
 
-/*** Render ***/
-function render(){
-  const items = loadItems(PHONE);
-  let list = items.slice();
-
-  const query = q.value.trim();
-  if(query){
-    const qq = query.toLowerCase();
-    list = list.filter(x=>(x.title||'').toLowerCase().includes(qq) || (x.desc||'').toLowerCase().includes(qq));
+loginBtn.addEventListener('click', ()=>{
+  authModal.style.display='flex';
+  authErr.style.display='none';
+  phoneInp.value='';
+  if(!recaptcha){
+    recaptcha = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
   }
-  if(sort.value==='price_asc') list.sort((a,b)=>a.price-b.price);
-  else if(sort.value==='price_desc') list.sort((a,b)=>b.price-a.price);
-  else if(sort.value==='title') list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-  else list.sort((a,b)=>b.ts-a.ts);
+});
 
+authOk.onclick = async ()=>{
+  const raw = (phoneInp.value||'').trim();
+  const digits = raw.replace(/\D+/g,'');
+  if(digits.length < 10){ authErr.textContent='شماره معتبر نیست.'; authErr.style.display='block'; return; }
+  // نمونه برای ایران: +98
+  const e164 = digits.startsWith('0') ? '+98'+digits.slice(1) : (digits.startsWith('+')? digits : '+98'+digits);
+  try{
+    confirmation = await signInWithPhoneNumber(auth, e164, recaptcha);
+    const code = prompt('کد پیامکی را وارد کنید:');
+    if(!code) return;
+    await confirmation.confirm(code);
+    authModal.style.display='none';
+  }catch(err){
+    authErr.textContent='ارسال/تأیید کد ناموفق بود: '+(err.message||err);
+    authErr.style.display='block';
+  }
+};
+authClose.onclick = ()=> authModal.style.display='none';
+logoutBtn.onclick = ()=> signOut(auth);
+
+/* ===== Feed (public | mine) ===== */
+let FEED = 'public';
+let unsub = null;
+let cache = [];
+
+function refreshTabsUI(){
+  tabPublic.classList.toggle('btn', FEED==='public');
+  tabPublic.classList.toggle('btn-outline', FEED!=='public');
+  tabMine.classList.toggle('btn', FEED==='mine');
+  tabMine.classList.toggle('btn-outline', FEED!=='mine');
+}
+tabPublic.addEventListener('click', ()=>{ FEED='public'; refreshTabsUI(); bindFeed(); });
+tabMine.addEventListener('click',   ()=>{ FEED='mine';   refreshTabsUI(); bindFeed(); });
+
+function bindFeed(){
+  if(unsub){ unsub(); unsub=null; }
+  cache = [];
+  render();
+
+  if(FEED === 'public'){
+    const col = collection(db, 'items');
+    const qy  = query(col, where('status','==','public'), orderBy('ts','desc'));
+    unsub = onSnapshot(qy, (snap)=>{
+      cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      render();
+    });
+  }else{
+    if(!currentUser){ cache=[]; render(); return; }
+    const col = collection(db, 'items');
+    const qy  = query(col, where('uid','==', currentUser.uid), orderBy('ts','desc'));
+    unsub = onSnapshot(qy, (snap)=>{
+      cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      render();
+    });
+  }
+}
+
+/* ===== Render ===== */
+function filteredSorted(){
+  let list = cache.slice();
+  const queryStr = q.value.trim().toLowerCase();
+  if(queryStr) list = list.filter(x=>(x.title||'').toLowerCase().includes(queryStr) || (x.desc||'').toLowerCase().includes(queryStr));
+  const mode = sort.value;
+  if(mode==='price_asc') list.sort((a,b)=>a.price-b.price);
+  else if(mode==='price_desc') list.sort((a,b)=>b.price-a.price);
+  else if(mode==='title') list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+  else list.sort((a,b)=> (b.ts?.toMillis?.() ?? b.ts) - (a.ts?.toMillis?.() ?? a.ts));
+  return list;
+}
+
+function render(){
+  const list = filteredSorted();
   grid.innerHTML='';
-  emptyNote.style.display = list.length? 'none':'block';
-
-  list.forEach((it)=>{
-    const el=document.createElement('div');
-    el.className='item';
-    el.innerHTML=`
-      <img class="thumb" alt="photo" src="${it.photo}">
+  emptyNote.style.display = list.length ? 'none' : 'block';
+  list.forEach(it=>{
+    const dateStr = (it.ts?.toDate?.() ? it.ts.toDate() : new Date(it.ts)).toLocaleDateString('fa-IR');
+    const isOwner = currentUser && it.uid === currentUser.uid;
+    const el=document.createElement('div'); el.className='item';
+    el.innerHTML = `
+      <img class="thumb" alt="photo" src="${it.photoURL}">
       <div class="content">
-        <h3>${it.title ? escapeHtml(it.title) : 'بدون عنوان'}</h3>
+        <h3>${it.title? escapeHtml(it.title) : 'بدون عنوان'}</h3>
         <div class="meta">
           <div class="price">${formatPrice(it.price)} <span class="badge">تومان</span></div>
-          <div class="badge">${new Date(it.ts).toLocaleDateString('fa-IR')}</div>
+          <div class="badge">${dateStr}</div>
         </div>
         ${it.desc ? `<p class="note" style="margin-top:8px">${escapeHtml(it.desc)}</p>` : ``}
         <div class="controls">
-          <button class="btn-outline" data-del="${it.id}">حذف</button>
-          <button class="btn-outline" data-dl="${it.id}">دانلود عکس</button>
+          ${isOwner ? `<button class="btn-outline" data-del="${it.id}">حذف</button>` : ``}
+          <a class="btn-outline" href="${it.photoURL}" download="photo.jpg">دانلود عکس</a>
         </div>
       </div>`;
     grid.appendChild(el);
   });
 
-  grid.querySelectorAll('[data-del]').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      if(!PHONE) return;
-      const id=b.getAttribute('data-del');
-      const rest = loadItems(PHONE).filter(x=>x.id!==id);
-      saveItems(PHONE, rest); render();
-    });
-  });
-  grid.querySelectorAll('[data-dl]').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      const id=b.getAttribute('data-dl');
-      const it = loadItems(PHONE).find(x=>x.id===id);
-      if(!it) return;
-      const a=document.createElement('a');
-      a.href=it.photo; a.download=(it.title||'item')+'.jpg';
-      document.body.appendChild(a); a.click(); a.remove();
+  grid.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.getAttribute('data-del');
+      if(!id || !currentUser) return;
+      await deleteDoc(doc(db, 'items', id));
     });
   });
 }
 
-/*** Add item ***/
-$('addBtn').addEventListener('click', async ()=>{
+q.addEventListener('input', render);
+sort.addEventListener('change', render);
+
+/* ===== Add new item ===== */
+addBtn.addEventListener('click', async ()=>{
   err.style.display='none';
-  if(!PHONE){ err.textContent='ابتدا وارد شوید.'; err.style.display='block'; return; }
+  if(!currentUser){ err.textContent='ابتدا وارد شوید.'; err.style.display='block'; return; }
 
   const file = inpPhoto.files && inpPhoto.files[0];
   const priceNum = toNumber(inpPrice.value);
   if(!file || !isFinite(priceNum) || priceNum<=0){
     err.textContent='عکس و قیمت الزامی است.'; err.style.display='block'; return;
   }
-  const photoUrl = await compressImage(file);
-  const item = {
-    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
-    title: (inpTitle.value||'').trim(),
-    price: Math.round(priceNum),
-    desc: (inpDesc.value||'').trim(),
-    photo: photoUrl,
-    ts: Date.now()
-  };
-  const items = loadItems(PHONE); items.push(item); saveItems(PHONE, items);
-  inpTitle.value=''; inpPrice.value=''; inpDesc.value=''; inpPhoto.value='';
-  render();
+  try{
+    // compress locally
+    const dataURL = await compressImage(file);
+    const blob    = await dataURLtoBlob(dataURL);
+
+    // upload to Storage under user path
+    const itemId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random());
+    const path   = `users/${currentUser.uid}/items/${itemId}.jpg`;
+    const r      = ref(stg, path);
+    await uploadBytes(r, blob, { contentType: 'image/jpeg' });
+    const url    = await getDownloadURL(r);
+
+    // save Firestore doc
+    await addDoc(collection(db, 'items'), {
+      uid: currentUser.uid,
+      title: (inpTitle.value||'').trim(),
+      price: Math.round(priceNum),
+      desc: (inpDesc.value||'').trim(),
+      photoURL: url,
+      status: isPublic.checked ? 'public' : 'private',
+      ts: serverTimestamp()
+    });
+
+    // reset form
+    inpTitle.value=''; inpPrice.value=''; inpDesc.value=''; inpPhoto.value='';
+  }catch(e){
+    err.textContent='خطا در ثبت آگهی: '+(e.message||e);
+    err.style.display='block';
+  }
 });
 
-/*** Search & sort ***/
-q.addEventListener('input', render);
-sort.addEventListener('change', render);
-
-/*** Export/Clear removed ***/
-
-/*** Helpers ***/
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
-
-/*** Auth handlers ***/
-loginBtn.addEventListener('click', ()=>{ authModal.style.display='flex'; authErr.style.display='none'; phoneInp.value=PHONE||''; });
-authClose.addEventListener('click', ()=>{ authModal.style.display='none'; });
-authOk.addEventListener('click', ()=>{
-  const raw = (phoneInp.value||'').trim();
-  const digits = raw.replace(/\D+/g,'');
-  if(digits.length<10){ authErr.style.display='block'; return; }
-  PHONE = digits;
-  setPhone(PHONE);
-  authModal.style.display='none';
-  refreshAuthUI();
-  render();
-});
-logoutBtn.addEventListener('click', ()=>{
-  PHONE = null; setPhone(null);
-  refreshAuthUI();
-  render();
+/* ===== Auth state ===== */
+onAuthStateChanged(auth, (user)=>{
+  currentUser = user || null;
+  showAuthUI(currentUser);
+  bindFeed();
 });
 
-/*** First render ***/
-refreshAuthUI();
-render();
-</script>
-
-<!-- Optional: service worker register (اگر قبلاً در پروژه داری، تکرار نکن) -->
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js'));
-}
+/* ===== boot ===== */
+refreshTabsUI();
+bindFeed();
 </script>
 </body>
-</html>ا
+</html>
