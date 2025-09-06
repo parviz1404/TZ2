@@ -1,1 +1,325 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rasta Bazaar — تجهیزات مهندسی دست‌دوم</title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="icon-180.png">
+
+<style>
+:root{
+  --bg:#f6f8fc; --fg:#0b1020; --muted:#6b7280;
+  --primary:#2563eb; --primary-2:#60a5fa;
+  --border:#e6e8ef; --surface:#fff;
+  --shadow:0 18px 44px rgba(2,6,23,.08); --shadow-sm:0 10px 24px rgba(2,6,23,.06);
+  --r-xl:22px; --r-lg:16px; --r-md:12px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:
+    radial-gradient(1000px 520px at 110% -10%, rgba(96,165,250,.15), transparent 60%),
+    radial-gradient(900px 520px at -10% 120%, rgba(125,211,252,.12), transparent 60%),
+    var(--bg);
+  color:var(--fg);
+  font:16px/1.7 "Vazirmatn","IRANSans",system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+}
+
+/* Header */
+header{background:linear-gradient(120deg,var(--primary),var(--primary-2)); color:#fff; box-shadow:var(--shadow)}
+.head{max-width:1100px; margin:0 auto; padding:16px; display:flex; gap:12px; align-items:center; justify-content:space-between}
+h1{margin:0; font-size:20px; font-weight:900}
+.head .actions{display:flex; gap:8px; align-items:center}
+.btn, .btn-outline{
+  padding:10px 14px; border-radius:12px; border:0; font-weight:900; cursor:pointer;
+}
+.btn{color:#fff; background:linear-gradient(120deg,#3b82f6,#60a5fa); box-shadow:0 10px 22px rgba(59,130,246,.25)}
+.btn-outline{background:#fff; color:var(--primary); border:2px solid var(--primary)}
+.wrap{max-width:1100px; margin:20px auto; padding:0 16px}
+
+/* Card */
+.section{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl); box-shadow:var(--shadow); overflow:hidden}
+.sec-header{display:flex; align-items:center; gap:10px; padding:12px 16px; background:linear-gradient(180deg,#fff,#f9fbff); border-bottom:1px solid var(--border)}
+.sec-title{margin:0; font-size:16px; font-weight:900; color:#1f2937}
+.sec-body{padding:16px}
+
+/* Form */
+.form{display:grid; gap:12px; grid-template-columns:repeat(2,minmax(240px,1fr))}
+@media (max-width:820px){.form{grid-template-columns:1fr}}
+label{display:block; font-size:12px; font-weight:800; color:#334155; margin:4px 2px}
+.control{display:flex; align-items:center; gap:10px; background:#f8fbff; border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px}
+input[type="text"], input[type="number"], textarea{
+  width:100%; border:0; outline:0; background:transparent; font-weight:800; color:var(--fg);
+}
+input[type="file"]{width:100%}
+textarea{min-height:92px; resize:vertical; font-weight:600}
+.suffix{font-size:12px; color:var(--muted)}
+.row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px}
+.err{display:none; margin-top:6px; color:#ef4444; font-size:13px}
+.note{font-size:12px; color:#64748b}
+
+/* Toolbar */
+.toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.search{flex:1; min-width:220px}
+select{border:1px solid var(--border); border-radius:10px; padding:8px 10px; background:#fff; font-weight:700}
+input[type="search"]{width:100%; border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:#fff; font-weight:700}
+
+/* Grid of items */
+.grid{display:grid; gap:14px; grid-template-columns:repeat(3,minmax(220px,1fr))}
+@media (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+.item{background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-sm); overflow:hidden; display:flex; flex-direction:column}
+.thumb{aspect-ratio:4/3; width:100%; object-fit:cover; background:#f3f4f6}
+.item .content{padding:12px}
+.item h3{margin:.2rem 0 .4rem; font-size:15px; font-weight:900; color:#111827}
+.meta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px}
+.price{font-size:18px; font-weight:900; color:#111827}
+.controls{display:flex; gap:8px; margin-top:10px}
+.badge{display:inline-block; padding:2px 8px; border-radius:999px; background:#eff6ff; border:1px solid #dbeafe; color:#1d4ed8; font-size:12px}
+
+footer{max-width:1100px; margin:22px auto 28px; padding:14px 16px; background:#fff; border:1px dashed #c7d2fe; color:#1f2937; border-radius:16px; box-shadow:var(--shadow-sm); line-height:1.8; font-size:13px}
+footer strong{font-weight:900}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head">
+    <h1>Rasta Bazaar — تجهیزات مهندسی دست‌دوم</h1>
+    <div class="actions">
+      <button id="exportBtn" class="btn-outline">خروجی JSON</button>
+      <button id="clearBtn" class="btn-outline" title="پاکسازی همه آگهی‌های ذخیره‌شده">حذف همه</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Form -->
+  <section class="section">
+    <div class="sec-header">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h12M4 17h10" stroke="#334155" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <h2 class="sec-title">ثبت آگهی</h2>
+    </div>
+    <div class="sec-body">
+      <div class="form">
+        <div>
+          <label for="title">عنوان (اختیاری)</label>
+          <div class="control"><input id="title" type="text" placeholder="مثلاً: دوربین نقشه‌برداری Leica TS06"></div>
+        </div>
+        <div>
+          <label for="price">قیمت (اجباری)</label>
+          <div class="control">
+            <input id="price" type="text" inputmode="decimal" placeholder="مثلاً ۱۲٬۵۰۰٬۰۰۰">
+            <span class="suffix">تومان</span>
+          </div>
+        </div>
+        <div style="grid-column:1/-1">
+          <label for="photo">عکس تجهیز (اجباری)</label>
+          <div class="control"><input id="photo" type="file" accept="image/*" capture="environment"></div>
+          <div class="note">فرمت‌های jpg/png؛ عکس به‌صورت خودکار برای سرعت آگهی فشرده می‌شود.</div>
+        </div>
+        <div style="grid-column:1/-1">
+          <label for="desc">توضیح کوتاه (اختیاری)</label>
+          <div class="control"><textarea id="desc" placeholder="سال ساخت، وضعیت سلامت، لوازم جانبی..."></textarea></div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="addBtn" class="btn">ثبت آگهی</button>
+        <div id="err" class="err">عکس و قیمت الزامی است.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toolbar -->
+  <section class="section" style="margin-top:16px">
+    <div class="sec-header">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke="#059669" stroke-width="1.8" fill="none"/></svg>
+      <h2 class="sec-title">آگهی‌های شما</h2>
+    </div>
+    <div class="sec-body">
+      <div class="toolbar">
+        <input id="q" class="search" type="search" placeholder="جست‌وجو در عنوان/توضیح...">
+        <select id="sort">
+          <option value="new">مرتب‌سازی: جدیدترین</option>
+          <option value="price_asc">قیمت از کم به زیاد</option>
+          <option value="price_desc">قیمت از زیاد به کم</option>
+          <option value="title">عنوان (الفبا)</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grid -->
+  <section class="section" style="margin-top:12px">
+    <div class="sec-body">
+      <div id="grid" class="grid"></div>
+      <p id="emptyNote" class="note" style="display:none; padding:10px 2px">هنوز آگهی‌ای ثبت نشده است.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  این برنامه برای درج سریع آگهی‌های <strong>تجهیزات مهندسی دست‌دوم</strong> طراحی شده است. داده‌ها به‌صورت محلی روی دستگاه شما ذخیره می‌شوند.
+</footer>
+
+<script>
+/*** Utils: Persian digits & price formatting ***/
+const fa=/[۰-۹]/g, ar=/[٠-٩]/g;
+const maps={fa:{'۰':0,'۱':1,'۲':2,'۳':3,'۴':4,'۵':5,'۶':6,'۷':7,'۸':8,'۹':9},
+            ar:{'٠':0,'١':1,'٢':2,'٣':3,'٤':4,'٥':5,'٦':6,'٧':7,'٨':8,'٩':9}};
+function toNumber(v){
+  if(v==null) return NaN;
+  let s=String(v).trim().replace(/\s+/g,'').replace(/,/g,'').replace(/٬/g,'');
+  s=s.replace(fa,d=>maps.fa[d]).replace(ar,d=>maps.ar[d]);
+  return Number(s);
+}
+function formatPrice(n){
+  if(!isFinite(n)) return '—';
+  return n.toLocaleString('fa-IR');
+}
+
+/*** Image compression to dataURL ***/
+function compressImage(file, maxW=1200, quality=0.82){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload = ()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas=document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        // Prefer JPEG for size, fallback PNG
+        let url;
+        try{ url=canvas.toDataURL('image/jpeg', quality); }
+        catch(e){ url=canvas.toDataURL(); }
+        resolve(url);
+      };
+      img.onerror=()=>reject(new Error('bad image'));
+      img.src=reader.result;
+    };
+    reader.onerror=()=>reject(new Error('read error'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/*** Storage ***/
+const KEY='rasta-bazaar-items-v1';
+function loadItems(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; } }
+function saveItems(items){ localStorage.setItem(KEY, JSON.stringify(items)); }
+
+/*** DOM refs ***/
+const $=id=>document.getElementById(id);
+const grid=$('grid'), emptyNote=$('emptyNote');
+const inpTitle=$('title'), inpPrice=$('price'), inpPhoto=$('photo'), inpDesc=$('desc');
+const q=$('q'), sort=$('sort'), err=$('err');
+
+/*** Render ***/
+function render(){
+  let items = loadItems();
+  const query = q.value.trim();
+  if(query){
+    const qq = query.toLowerCase();
+    items = items.filter(x=>(x.title||'').toLowerCase().includes(qq) || (x.desc||'').toLowerCase().includes(qq));
+  }
+  // sorting
+  if(sort.value==='price_asc') items.sort((a,b)=>a.price-b.price);
+  else if(sort.value==='price_desc') items.sort((a,b)=>b.price-a.price);
+  else if(sort.value==='title') items.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+  else items.sort((a,b)=>b.ts-a.ts); // new
+
+  grid.innerHTML='';
+  if(items.length===0){ emptyNote.style.display='block'; return; }
+  emptyNote.style.display='none';
+
+  items.forEach((it, idx)=>{
+    const el=document.createElement('div');
+    el.className='item';
+    el.innerHTML=`
+      <img class="thumb" alt="photo" src="${it.photo}">
+      <div class="content">
+        <h3>${it.title ? escapeHtml(it.title) : 'بدون عنوان'}</h3>
+        <div class="meta">
+          <div class="price">${formatPrice(it.price)} <span class="badge">تومان</span></div>
+          <div class="badge">${new Date(it.ts).toLocaleDateString('fa-IR')}</div>
+        </div>
+        ${it.desc ? `<p class="note" style="margin-top:8px">${escapeHtml(it.desc)}</p>` : ``}
+        <div class="controls">
+          <button class="btn-outline" data-del="${it.id}">حذف</button>
+          <button class="btn-outline" data-dl="${it.id}">دانلود عکس</button>
+        </div>
+      </div>`;
+    grid.appendChild(el);
+  });
+
+  // bind controls
+  grid.querySelectorAll('[data-del]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id=b.getAttribute('data-del');
+      const rest = loadItems().filter(x=>x.id!==id);
+      saveItems(rest); render();
+    });
+  });
+  grid.querySelectorAll('[data-dl]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id=b.getAttribute('data-dl');
+      const it = loadItems().find(x=>x.id===id);
+      if(!it) return;
+      const a=document.createElement('a');
+      a.href=it.photo; a.download=(it.title||'item')+'.jpg';
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+  });
+}
+
+/*** Add item ***/
+$('addBtn').addEventListener('click', async ()=>{
+  err.style.display='none';
+  const file = inpPhoto.files && inpPhoto.files[0];
+  const priceNum = toNumber(inpPrice.value);
+  if(!file || !isFinite(priceNum) || priceNum<=0){
+    err.style.display='block'; return;
+  }
+  const photoUrl = await compressImage(file);
+  const item = {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()),
+    title: (inpTitle.value||'').trim(),
+    price: Math.round(priceNum),
+    desc: (inpDesc.value||'').trim(),
+    photo: photoUrl,
+    ts: Date.now()
+  };
+  const items = loadItems(); items.push(item); saveItems(items);
+  // reset minimal
+  inpTitle.value=''; inpPrice.value=''; inpDesc.value=''; inpPhoto.value='';
+  render();
+});
+
+/*** Search & sort ***/
+q.addEventListener('input', render);
+sort.addEventListener('change', render);
+
+/*** Export & Clear ***/
+$('exportBtn').addEventListener('click', ()=>{
+  const data = new Blob([localStorage.getItem(KEY)||'[]'], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(data); a.download='rasta-bazaar.json';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+});
+$('clearBtn').addEventListener('click', ()=>{
+  if(confirm('همه آگهی‌های ذخیره‌شده حذف شوند؟')){ localStorage.removeItem(KEY); render(); }
+});
+
+/*** Helpers ***/
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+/*** First render ***/
+render();
+</script>
+</body>
+</html>
