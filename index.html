@@ -80,8 +80,16 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
 .controls{display:flex; gap:8px; margin-top:10px}
 .badge{display:inline-block; padding:2px 8px; border-radius:999px; background:#eff6ff; border:1px solid #dbeafe; color:#1d4ed8; font-size:12px}
 
-footer{max-width:1100px; margin:22px auto 28px; padding:14px 16px; background:#fff; border:1px dashed #c7d2fe; color:#1f2937; border-radius:16px; box-shadow:var(--shadow-sm); line-height:1.8; font-size:13px}
-footer strong{font-weight:900}
+/* Auth badge */
+.user-badge{display:inline-flex; align-items:center; gap:8px; background:#ffffffaa; color:#0b1020; padding:6px 10px; border-radius:999px; font-weight:800;}
+.user-badge small{color:#374151}
+
+/* Modal */
+.modal-backdrop{position:fixed; inset:0; background:rgba(15,23,42,.5); display:none; align-items:center; justify-content:center; z-index:50}
+.modal{width:min(520px,92vw); background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); overflow:hidden}
+.modal .hd{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); background:#f9fbff}
+.modal .bd{padding:16px}
+.modal .ft{padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -90,11 +98,35 @@ footer strong{font-weight:900}
   <div class="head">
     <h1>Rasta Bazaar — تجهیزات مهندسی دست‌دوم</h1>
     <div class="actions">
-      <button id="exportBtn" class="btn-outline">خروجی JSON</button>
-      <button id="clearBtn" class="btn-outline" title="پاکسازی همه آگهی‌های ذخیره‌شده">حذف همه</button>
+      <span id="userBadge" class="user-badge" style="display:none;">📱 <small id="userPhone"></small></span>
+      <button id="loginBtn" class="btn-outline">ورود / ثبت‌نام</button>
+      <button id="logoutBtn" class="btn-outline" style="display:none">خروج</button>
     </div>
   </div>
 </header>
+
+<!-- Auth Modal -->
+<div id="authModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="hd">
+      <strong>ورود / ثبت‌نام با موبایل</strong>
+      <button id="authClose" style="background:none;border:0;font-size:18px;cursor:pointer">✖</button>
+    </div>
+    <div class="bd">
+      <label for="phone" style="display:block; font-weight:800; margin-bottom:6px">شماره موبایل</label>
+      <div class="control">
+        <input id="phone" type="text" inputmode="tel" placeholder="مثلاً 09123456789" style="direction:ltr; text-align:left">
+      </div>
+      <p class="note" style="margin-top:8px">
+        نسخهٔ فعلی بدون بک‌اند است؛ شماره فقط برای تفکیک آگهی‌های شما روی همین دستگاه استفاده می‌شود.
+      </p>
+      <div id="authErr" class="err">شماره معتبر وارد کنید (حداقل 10 رقم).</div>
+    </div>
+    <div class="ft">
+      <button id="authOk" class="btn">تأیید و ورود</button>
+    </div>
+  </div>
+</div>
 
 <main class="wrap">
   <!-- Form -->
@@ -119,7 +151,7 @@ footer strong{font-weight:900}
         <div style="grid-column:1/-1">
           <label for="photo">عکس تجهیز (اجباری)</label>
           <div class="control"><input id="photo" type="file" accept="image/*" capture="environment"></div>
-          <div class="note">فرمت‌های jpg/png؛ عکس به‌صورت خودکار برای سرعت آگهی فشرده می‌شود.</div>
+          <div class="note">عکس برای سرعت تا عرض ~1200px فشرده می‌شود.</div>
         </div>
         <div style="grid-column:1/-1">
           <label for="desc">توضیح کوتاه (اختیاری)</label>
@@ -128,7 +160,7 @@ footer strong{font-weight:900}
       </div>
       <div class="row">
         <button id="addBtn" class="btn">ثبت آگهی</button>
-        <div id="err" class="err">عکس و قیمت الزامی است.</div>
+        <div id="err" class="err">برای ثبت آگهی، ابتدا وارد شوید؛ سپس عکس و قیمت را کامل کنید.</div>
       </div>
     </div>
   </section>
@@ -162,7 +194,7 @@ footer strong{font-weight:900}
 </main>
 
 <footer>
-  این برنامه برای درج سریع آگهی‌های <strong>تجهیزات مهندسی دست‌دوم</strong> طراحی شده است. داده‌ها به‌صورت محلی روی دستگاه شما ذخیره می‌شوند.
+  داده‌های شما روی همین دستگاه ذخیره می‌شود. برای اشتراک‌گذاری بین کاربران، در نسخهٔ بعدی اتصال به سرور/کلاد اضافه می‌کنیم.
 </footer>
 
 <script>
@@ -176,10 +208,7 @@ function toNumber(v){
   s=s.replace(fa,d=>maps.fa[d]).replace(ar,d=>maps.ar[d]);
   return Number(s);
 }
-function formatPrice(n){
-  if(!isFinite(n)) return '—';
-  return n.toLocaleString('fa-IR');
-}
+function formatPrice(n){ if(!isFinite(n)) return '—'; return n.toLocaleString('fa-IR'); }
 
 /*** Image compression to dataURL ***/
 function compressImage(file, maxW=1200, quality=0.82){
@@ -195,10 +224,7 @@ function compressImage(file, maxW=1200, quality=0.82){
         canvas.width=w; canvas.height=h;
         const ctx=canvas.getContext('2d');
         ctx.drawImage(img,0,0,w,h);
-        // Prefer JPEG for size, fallback PNG
-        let url;
-        try{ url=canvas.toDataURL('image/jpeg', quality); }
-        catch(e){ url=canvas.toDataURL(); }
+        let url; try{ url=canvas.toDataURL('image/jpeg', quality); } catch(e){ url=canvas.toDataURL(); }
         resolve(url);
       };
       img.onerror=()=>reject(new Error('bad image'));
@@ -209,10 +235,20 @@ function compressImage(file, maxW=1200, quality=0.82){
   });
 }
 
-/*** Storage ***/
-const KEY='rasta-bazaar-items-v1';
-function loadItems(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; } }
-function saveItems(items){ localStorage.setItem(KEY, JSON.stringify(items)); }
+/*** Storage (per-phone) ***/
+const KEY_PREFIX='rasta-bazaar-items-v1::';
+const AUTH_KEY='rasta-bazaar-auth';
+function currentPhone(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch(e){ return null; } }
+function setPhone(p){ localStorage.setItem(AUTH_KEY, JSON.stringify(p)); }
+function keyFor(phone){ return KEY_PREFIX + phone; }
+function loadItems(phone){
+  if(!phone) return [];
+  try{ return JSON.parse(localStorage.getItem(keyFor(phone))||'[]'); }catch(e){ return []; }
+}
+function saveItems(phone, items){
+  if(!phone) return;
+  localStorage.setItem(keyFor(phone), JSON.stringify(items));
+}
 
 /*** DOM refs ***/
 const $=id=>document.getElementById(id);
@@ -220,25 +256,45 @@ const grid=$('grid'), emptyNote=$('emptyNote');
 const inpTitle=$('title'), inpPrice=$('price'), inpPhoto=$('photo'), inpDesc=$('desc');
 const q=$('q'), sort=$('sort'), err=$('err');
 
+const loginBtn=$('loginBtn'), logoutBtn=$('logoutBtn'), userBadge=$('userBadge'), userPhoneEl=$('userPhone');
+const authModal=$('authModal'), authOk=$('authOk'), authClose=$('authClose'), authErr=$('authErr'), phoneInp=$('phone');
+
+let PHONE = currentPhone();
+
+/*** Auth UI ***/
+function refreshAuthUI(){
+  if(PHONE){
+    userBadge.style.display='inline-flex';
+    userPhoneEl.textContent = PHONE;
+    loginBtn.style.display='none';
+    logoutBtn.style.display='inline-block';
+  }else{
+    userBadge.style.display='none';
+    userPhoneEl.textContent = '';
+    loginBtn.style.display='inline-block';
+    logoutBtn.style.display='none';
+  }
+}
+
 /*** Render ***/
 function render(){
-  let items = loadItems();
+  const items = loadItems(PHONE);
+  let list = items.slice();
+
   const query = q.value.trim();
   if(query){
     const qq = query.toLowerCase();
-    items = items.filter(x=>(x.title||'').toLowerCase().includes(qq) || (x.desc||'').toLowerCase().includes(qq));
+    list = list.filter(x=>(x.title||'').toLowerCase().includes(qq) || (x.desc||'').toLowerCase().includes(qq));
   }
-  // sorting
-  if(sort.value==='price_asc') items.sort((a,b)=>a.price-b.price);
-  else if(sort.value==='price_desc') items.sort((a,b)=>b.price-a.price);
-  else if(sort.value==='title') items.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-  else items.sort((a,b)=>b.ts-a.ts); // new
+  if(sort.value==='price_asc') list.sort((a,b)=>a.price-b.price);
+  else if(sort.value==='price_desc') list.sort((a,b)=>b.price-a.price);
+  else if(sort.value==='title') list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+  else list.sort((a,b)=>b.ts-a.ts);
 
   grid.innerHTML='';
-  if(items.length===0){ emptyNote.style.display='block'; return; }
-  emptyNote.style.display='none';
+  emptyNote.style.display = list.length? 'none':'block';
 
-  items.forEach((it, idx)=>{
+  list.forEach((it)=>{
     const el=document.createElement('div');
     el.className='item';
     el.innerHTML=`
@@ -258,18 +314,18 @@ function render(){
     grid.appendChild(el);
   });
 
-  // bind controls
   grid.querySelectorAll('[data-del]').forEach(b=>{
     b.addEventListener('click', ()=>{
+      if(!PHONE) return;
       const id=b.getAttribute('data-del');
-      const rest = loadItems().filter(x=>x.id!==id);
-      saveItems(rest); render();
+      const rest = loadItems(PHONE).filter(x=>x.id!==id);
+      saveItems(PHONE, rest); render();
     });
   });
   grid.querySelectorAll('[data-dl]').forEach(b=>{
     b.addEventListener('click', ()=>{
       const id=b.getAttribute('data-dl');
-      const it = loadItems().find(x=>x.id===id);
+      const it = loadItems(PHONE).find(x=>x.id===id);
       if(!it) return;
       const a=document.createElement('a');
       a.href=it.photo; a.download=(it.title||'item')+'.jpg';
@@ -281,10 +337,12 @@ function render(){
 /*** Add item ***/
 $('addBtn').addEventListener('click', async ()=>{
   err.style.display='none';
+  if(!PHONE){ err.textContent='ابتدا وارد شوید.'; err.style.display='block'; return; }
+
   const file = inpPhoto.files && inpPhoto.files[0];
   const priceNum = toNumber(inpPrice.value);
   if(!file || !isFinite(priceNum) || priceNum<=0){
-    err.style.display='block'; return;
+    err.textContent='عکس و قیمت الزامی است.'; err.style.display='block'; return;
   }
   const photoUrl = await compressImage(file);
   const item = {
@@ -295,8 +353,7 @@ $('addBtn').addEventListener('click', async ()=>{
     photo: photoUrl,
     ts: Date.now()
   };
-  const items = loadItems(); items.push(item); saveItems(items);
-  // reset minimal
+  const items = loadItems(PHONE); items.push(item); saveItems(PHONE, items);
   inpTitle.value=''; inpPrice.value=''; inpDesc.value=''; inpPhoto.value='';
   render();
 });
@@ -305,21 +362,40 @@ $('addBtn').addEventListener('click', async ()=>{
 q.addEventListener('input', render);
 sort.addEventListener('change', render);
 
-/*** Export & Clear ***/
-$('exportBtn').addEventListener('click', ()=>{
-  const data = new Blob([localStorage.getItem(KEY)||'[]'], {type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(data); a.download='rasta-bazaar.json';
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
-});
-$('clearBtn').addEventListener('click', ()=>{
-  if(confirm('همه آگهی‌های ذخیره‌شده حذف شوند؟')){ localStorage.removeItem(KEY); render(); }
-});
+/*** Export/Clear removed ***/
 
 /*** Helpers ***/
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
+/*** Auth handlers ***/
+loginBtn.addEventListener('click', ()=>{ authModal.style.display='flex'; authErr.style.display='none'; phoneInp.value=PHONE||''; });
+authClose.addEventListener('click', ()=>{ authModal.style.display='none'; });
+authOk.addEventListener('click', ()=>{
+  const raw = (phoneInp.value||'').trim();
+  const digits = raw.replace(/\D+/g,'');
+  if(digits.length<10){ authErr.style.display='block'; return; }
+  PHONE = digits;
+  setPhone(PHONE);
+  authModal.style.display='none';
+  refreshAuthUI();
+  render();
+});
+logoutBtn.addEventListener('click', ()=>{
+  PHONE = null; setPhone(null);
+  refreshAuthUI();
+  render();
+});
+
 /*** First render ***/
+refreshAuthUI();
 render();
 </script>
+
+<!-- Optional: service worker register (اگر قبلاً در پروژه داری، تکرار نکن) -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js'));
+}
+</script>
 </body>
-</html>
+</html>ا
