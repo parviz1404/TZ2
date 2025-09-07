@@ -127,13 +127,13 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
       <div class="control">
         <input id="phone" type="text" inputmode="tel" placeholder="مثلاً 09123456789" style="direction:ltr; text-align:left">
       </div>
-      <p class="note" style="margin-top:8px">
-        کد تأیید (OTP) از طریق Firebase ارسال می‌شود. لطفاً دامنه GitHub Pages خود را در Authorized Domains اضافه کنید.
+      <p id="authNote" class="note" style="margin-top:8px">
+        ورود/ثبت‌نام با <strong>موبایل + رمز عبور</strong> (بدون پیامک). پس از واردکردن شماره، رمز از شما پرسیده می‌شود.
       </p>
       <div id="authErr" class="err">شماره معتبر وارد کنید (حداقل 10 رقم).</div>
     </div>
     <div class="ft">
-      <button id="authOk" class="btn">ارسال کد و ورود</button>
+      <button id="authOk" class="btn">ادامه</button>
     </div>
   </div>
 </div>
@@ -222,7 +222,7 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
   داده‌ها در <strong>Cloud Firestore</strong> و تصاویر در <strong>Firebase Storage</strong> ذخیره می‌شوند. برای نمایش عمومی، گزینهٔ «انتشار عمومی» را فعال بگذارید.
 </footer>
 
-<!-- reCAPTCHA container (invisible) -->
+<!-- reCAPTCHA container (دیگه لازم نیست، می‌گذاریم بمونه تا ساختار تغییر نکند) -->
 <div id="recaptcha-container" style="display:none"></div>
 
 <!-- ثبت Service Worker -->
@@ -232,20 +232,21 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<!-- ===== Firebase نسخه OTP + Cloud (ماژولار) ===== -->
+<!-- ===== Firebase (ماژولار) ===== -->
 <script type="module">
 /* ===== Firebase SDK (v10 modular) ===== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+/* ⬇️ Phone OTP را حذف کردیم؛ فقط ایمیل/پسورد استفاده می‌شود (با ایمیل ساختگی از موبایل) */
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-/* ===== تنظیمات Firebase — اینجا را از کنسول کپی کن ===== */
+/* ===== تنظیمات Firebase ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyDO7WjiVituiRULoORMrv5R_mVa14JhrgQ",
   authDomain: "rasta-bazar-57d80.firebaseapp.com",
   projectId: "rasta-bazar-57d80",
-  storageBucket: "rasta-bazar-57d80.firebasestorage.app",
+  storageBucket: "rasta-bazar-57d80.appspot.com", /* ← اصلاح شد: appspot.com */
   messagingSenderId: "826759050427",
   appId: "1:826759050427:web:985fc4895993db7e56259e",
   measurementId: "G-ZZ0MM9S0N2"
@@ -271,6 +272,7 @@ const q=$('q'), sort=$('sort'), grid=$('grid'), emptyNote=$('emptyNote');
 
 const loginBtn=$('loginBtn'), logoutBtn=$('logoutBtn'), userBadge=$('userBadge'), userPhoneEl=$('userPhone');
 const authModal=$('authModal'), authOk=$('authOk'), authClose=$('authClose'), authErr=$('authErr'), phoneInp=$('phone');
+const authNote=$('authNote');
 
 const tabPublic=$('tabPublic'), tabMine=$('tabMine');
 
@@ -295,15 +297,26 @@ function compressImage(file, maxW=1200, quality=0.82){
 }
 async function dataURLtoBlob(dataURL){ const res=await fetch(dataURL); return await res.blob(); }
 
-/* ===== Auth (Phone + OTP) ===== */
+/* ===== Auth: موبایل + رمز (بدون SMS، با ایمیل ساختگی) ===== */
 let currentUser = null;
-let confirmation = null;
-let recaptcha = null;
+
+function normalizePhone(raw){
+  if(!raw) return '';
+  let p = String(raw).replace(/\D/g,'');
+  if(p.startsWith('00')) p = p.slice(2);
+  if(p.startsWith('0'))  p = p.slice(1);
+  if(!p.startsWith('98')) p = '98' + p; // ایران
+  return '+' + p;
+}
+function phoneToFakeEmail(phoneE164){
+  const local = phoneE164.replace(/\+/g,'plus');
+  return `${local}@rasta-phone.user`;
+}
 
 function showAuthUI(user){
   if(user){
     userBadge.style.display='inline-flex';
-    userPhoneEl.textContent = user.phoneNumber || 'ورود';
+    userPhoneEl.textContent = user.displayName || (user.email ? user.email.replace(/@.*/,'').replace(/^plus/,'+') : 'کاربر');
     loginBtn.style.display='none';
     logoutBtn.style.display='inline-block';
   } else {
@@ -314,30 +327,45 @@ function showAuthUI(user){
   }
 }
 
+/* متن مودال را بدون تغییر ساختار اصلاح می‌کنیم */
+if (authNote) authNote.textContent = 'ورود/ثبت‌نام با موبایل + رمز عبور (بدون پیامک). پس از وارد کردن شماره، رمز پرسیده می‌شود.';
+
 loginBtn.addEventListener('click', ()=>{
   authModal.style.display='flex';
   authErr.style.display='none';
   phoneInp.value='';
-  if(!recaptcha){
-    recaptcha = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
-  }
 });
 
 authOk.onclick = async ()=>{
   const raw = (phoneInp.value||'').trim();
   const digits = raw.replace(/\D+/g,'');
   if(digits.length < 10){ authErr.textContent='شماره معتبر نیست.'; authErr.style.display='block'; return; }
-  // نمونه برای ایران: +98
-  const e164 = digits.startsWith('0') ? '+98'+digits.slice(1) : (digits.startsWith('+')? digits : '+98'+digits);
+
+  const phone = normalizePhone(raw);
+  // بدون افزودن ورودی جدید، رمز را با prompt می‌گیریم تا ساختار صفحه عوض نشود
+  const pass = prompt('رمز عبور را وارد کنید (حداقل ۶ کاراکتر):');
+  if(!pass || pass.length < 6){ authErr.textContent='رمز عبور حداقل ۶ کاراکتر.'; authErr.style.display='block'; return; }
+
+  const email = phoneToFakeEmail(phone);
   try{
-    confirmation = await signInWithPhoneNumber(auth, e164, recaptcha);
-    const code = prompt('کد پیامکی را وارد کنید:');
-    if(!code) return;
-    await confirmation.confirm(code);
+    // تلاش برای ورود
+    await signInWithEmailAndPassword(auth, email, pass);
     authModal.style.display='none';
-  }catch(err){
-    authErr.textContent='ارسال/تأیید کد ناموفق بود: '+(err.message||err);
-    authErr.style.display='block';
+  }catch(e){
+    if(e?.code === 'auth/user-not-found'){
+      try{
+        // اگر کاربر نبود: ایجاد حساب
+        const { user } = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(user, { displayName: phone });
+        authModal.style.display='none';
+      }catch(err2){
+        authErr.textContent='ثبت‌نام ناموفق: '+(err2.message||err2);
+        authErr.style.display='block';
+      }
+    }else{
+      authErr.textContent='ورود ناموفق: '+(e.message||e);
+      authErr.style.display='block';
+    }
   }
 };
 authClose.onclick = ()=> authModal.style.display='none';
