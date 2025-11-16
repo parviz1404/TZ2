@@ -22,24 +22,23 @@
 }
 *{box-sizing:border-box}
 body{
-  margin:0; background:
-    radial-gradient(1000px 520px at 110% -10%, rgba(96,165,250,.15), transparent 60%),
-    radial-gradient(900px 520px at -10% 120%, rgba(125,211,252,.12), transparent 60%),
-    var(--bg);
-  color:var(--fg);
+  margin:0; background:var(--bg); color:var(--fg);
   font:16px/1.7 "Vazirmatn","IRANSans",system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Header */
-header{background:linear-gradient(120deg,var(--primary),var(--primary-2)); color:#fff; box-shadow:var(--shadow)}
-.head{max-width:1100px; margin:0 auto; padding:16px; display:flex; gap:12px; align-items:center; justify-content:space-between}
+header{background:var(--surface); color:var(--fg); box-shadow:var(--shadow-sm); border-bottom:1px solid var(--border)}
+.head{max-width:1100px; margin:0 auto; padding:14px 16px; display:flex; gap:12px; align-items:center; justify-content:space-between}
 h1{margin:0; font-size:20px; font-weight:900}
 .head .actions{display:flex; gap:8px; align-items:center}
 .btn, .btn-outline{
-  padding:10px 14px; border-radius:12px; border:0; font-weight:900; cursor:pointer;
+  padding:10px 14px; border-radius:12px; border:0; font-weight:900; cursor:pointer; transition:all .2s ease;
 }
-.btn{color:#fff; background:linear-gradient(120deg,#3b82f6,#60a5fa); box-shadow:0 10px 22px rgba(59,130,246,.25)}
-.btn-outline{background:#fff; color:var(--primary); border:2px solid var(--primary)}
+.btn{color:#fff; background:var(--primary); box-shadow:0 8px 20px rgba(37,99,235,.22)}
+.btn:hover{background:#1d4ed8}
+.btn-outline{background:transparent; color:var(--primary); border:2px solid var(--primary)}
+.btn-outline:hover{background:var(--primary); color:#fff}
 .wrap{max-width:1100px; margin:20px auto; padding:0 16px}
 
 /* Sections */
@@ -78,13 +77,15 @@ input[type="search"]{width:100%; border:1px solid var(--border); border-radius:1
 @media (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media (max-width:640px){.grid{grid-template-columns:1fr}}
 
-.item{background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-sm); overflow:hidden; display:flex; flex-direction:column}
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800;900&display=swap');
+.item{background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-sm); overflow:hidden; display:flex; flex-direction:column; transition:all .2s ease}
+.item:hover{transform:translateY(-4px); box-shadow:var(--shadow)}
 .thumb{aspect-ratio:4/3; width:100%; object-fit:cover; background:#f3f4f6}
-.item .content{padding:12px}
-.item h3{margin:.2rem 0 .4rem; font-size:15px; font-weight:900; color:#111827}
-.meta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px}
-.price{font-size:18px; font-weight:900; color:#111827}
-.controls{display:flex; gap:8px; margin-top:10px}
+.item .content{padding:14px}
+.item h3{margin:.2rem 0 .4rem; font-size:16px; font-weight:800; color:#111827}
+.meta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px}
+.price{font-size:19px; font-weight:900; color:var(--primary)}
+.controls{display:flex; gap:8px; margin-top:12px}
 .badge{display:inline-block; padding:2px 8px; border-radius:999px; background:#eff6ff; border:1px solid #dbeafe; color:#1d4ed8; font-size:12px}
 
 /* Auth badge */
@@ -232,283 +233,7 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<!-- ===== Firebase (ماژولار) ===== -->
-<script type="module">
-/* ===== Firebase SDK (v10 modular) ===== */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-/* ⬇️ Phone OTP را حذف کردیم؛ فقط ایمیل/پسورد استفاده می‌شود (با ایمیل ساختگی از موبایل) */
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-
-/* ===== تنظیمات Firebase ===== */
-const firebaseConfig = {
-  apiKey: "AIzaSyDO7WjiVituiRULoORMrv5R_mVa14JhrgQ",
-  authDomain: "rasta-bazar-57d80.firebaseapp.com",
-  projectId: "rasta-bazar-57d80",
-  storageBucket: "rasta-bazar-57d80.appspot.com", /* ← اصلاح شد: appspot.com */
-  messagingSenderId: "826759050427",
-  appId: "1:826759050427:web:985fc4895993db7e56259e",
-  measurementId: "G-ZZ0MM9S0N2"
-};
-
-const cfgBanner = document.getElementById('cfgBanner');
-if (!firebaseConfig || !firebaseConfig.apiKey) {
-  cfgBanner.style.display = 'block';
-  throw new Error('Firebase config missing');
-}
-
-/* ===== Init ===== */
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-const stg  = getStorage(app);
-
-/* ===== DOM refs ===== */
-const $=id=>document.getElementById(id);
-const inpTitle=$('title'), inpPrice=$('price'), inpPhoto=$('photo'), inpDesc=$('desc'), isPublic=$('isPublic');
-const addBtn=$('addBtn'), err=$('err');
-const q=$('q'), sort=$('sort'), grid=$('grid'), emptyNote=$('emptyNote');
-
-const loginBtn=$('loginBtn'), logoutBtn=$('logoutBtn'), userBadge=$('userBadge'), userPhoneEl=$('userPhone');
-const authModal=$('authModal'), authOk=$('authOk'), authClose=$('authClose'), authErr=$('authErr'), phoneInp=$('phone');
-const authNote=$('authNote');
-
-const tabPublic=$('tabPublic'), tabMine=$('tabMine');
-
-/* ===== Utils ===== */
-const fa=/[۰-۹]/g, ar=/[٠-٩]/g;
-const maps={fa:{'۰':0,'۱':1,'۲':2,'۳':3,'۴':4,'۵':5,'۶':6,'۷':7,'۸':8,'۹':9}, ar:{'٠':0,'١':1,'٢':2,'٣':3,'٤':4,'٥':5,'٦':6,'٧':7,'٨':8,'٩':9}};
-function toNumber(v){ if(v==null) return NaN; let s=String(v).trim().replace(/\s+/g,'').replace(/,/g,'').replace(/٬/g,''); s=s.replace(fa,d=>maps.fa[d]).replace(ar,d=>maps.ar[d]); return Number(s); }
-function formatPrice(n){ if(!isFinite(n)) return '—'; return n.toLocaleString('fa-IR'); }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
-function compressImage(file, maxW=1200, quality=0.82){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>{ const img=new Image(); img.onload=()=>{
-      const scale=Math.min(1, maxW/img.width), w=Math.round(img.width*scale), h=Math.round(img.height*scale);
-      const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-      let url; try{ url=canvas.toDataURL('image/jpeg', quality);}catch(e){url=canvas.toDataURL();}
-      resolve(url);
-    }; img.onerror=()=>reject(new Error('bad image')); img.src=reader.result; };
-    reader.onerror=()=>reject(new Error('read error')); reader.readAsDataURL(file);
-  });
-}
-async function dataURLtoBlob(dataURL){ const res=await fetch(dataURL); return await res.blob(); }
-
-/* ===== Auth: موبایل + رمز (بدون SMS، با ایمیل ساختگی) ===== */
-let currentUser = null;
-
-function normalizePhone(raw){
-  if(!raw) return '';
-  let p = String(raw).replace(/\D/g,'');
-  if(p.startsWith('00')) p = p.slice(2);
-  if(p.startsWith('0'))  p = p.slice(1);
-  if(!p.startsWith('98')) p = '98' + p; // ایران
-  return '+' + p;
-}
-function phoneToFakeEmail(phoneE164){
-  const local = phoneE164.replace(/\+/g,'plus');
-  return `${local}@rasta-phone.user`;
-}
-
-function showAuthUI(user){
-  if(user){
-    userBadge.style.display='inline-flex';
-    userPhoneEl.textContent = user.displayName || (user.email ? user.email.replace(/@.*/,'').replace(/^plus/,'+') : 'کاربر');
-    loginBtn.style.display='none';
-    logoutBtn.style.display='inline-block';
-  } else {
-    userBadge.style.display='none';
-    userPhoneEl.textContent = '';
-    loginBtn.style.display='inline-block';
-    logoutBtn.style.display='none';
-  }
-}
-
-/* متن مودال را بدون تغییر ساختار اصلاح می‌کنیم */
-if (authNote) authNote.textContent = 'ورود/ثبت‌نام با موبایل + رمز عبور (بدون پیامک). پس از وارد کردن شماره، رمز پرسیده می‌شود.';
-
-loginBtn.addEventListener('click', ()=>{
-  authModal.style.display='flex';
-  authErr.style.display='none';
-  phoneInp.value='';
-});
-
-authOk.onclick = async ()=>{
-  const raw = (phoneInp.value||'').trim();
-  const digits = raw.replace(/\D+/g,'');
-  if(digits.length < 10){ authErr.textContent='شماره معتبر نیست.'; authErr.style.display='block'; return; }
-
-  const phone = normalizePhone(raw);
-  // بدون افزودن ورودی جدید، رمز را با prompt می‌گیریم تا ساختار صفحه عوض نشود
-  const pass = prompt('رمز عبور را وارد کنید (حداقل ۶ کاراکتر):');
-  if(!pass || pass.length < 6){ authErr.textContent='رمز عبور حداقل ۶ کاراکتر.'; authErr.style.display='block'; return; }
-
-  const email = phoneToFakeEmail(phone);
-  try{
-    // تلاش برای ورود
-    await signInWithEmailAndPassword(auth, email, pass);
-    authModal.style.display='none';
-  }catch(e){
-    if(e?.code === 'auth/user-not-found'){
-      try{
-        // اگر کاربر نبود: ایجاد حساب
-        const { user } = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(user, { displayName: phone });
-        authModal.style.display='none';
-      }catch(err2){
-        authErr.textContent='ثبت‌نام ناموفق: '+(err2.message||err2);
-        authErr.style.display='block';
-      }
-    }else{
-      authErr.textContent='ورود ناموفق: '+(e.message||e);
-      authErr.style.display='block';
-    }
-  }
-};
-authClose.onclick = ()=> authModal.style.display='none';
-logoutBtn.onclick = ()=> signOut(auth);
-
-/* ===== Feed (public | mine) ===== */
-let FEED = 'public';
-let unsub = null;
-let cache = [];
-
-function refreshTabsUI(){
-  tabPublic.classList.toggle('btn', FEED==='public');
-  tabPublic.classList.toggle('btn-outline', FEED!=='public');
-  tabMine.classList.toggle('btn', FEED==='mine');
-  tabMine.classList.toggle('btn-outline', FEED!=='mine');
-}
-tabPublic.addEventListener('click', ()=>{ FEED='public'; refreshTabsUI(); bindFeed(); });
-tabMine.addEventListener('click',   ()=>{ FEED='mine';   refreshTabsUI(); bindFeed(); });
-
-function bindFeed(){
-  if(unsub){ unsub(); unsub=null; }
-  cache = [];
-  render();
-
-  if(FEED === 'public'){
-    const col = collection(db, 'items');
-    const qy  = query(col, where('status','==','public'), orderBy('ts','desc'));
-    unsub = onSnapshot(qy, (snap)=>{
-      cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
-    });
-  }else{
-    if(!currentUser){ cache=[]; render(); return; }
-    const col = collection(db, 'items');
-    const qy  = query(col, where('uid','==', currentUser.uid), orderBy('ts','desc'));
-    unsub = onSnapshot(qy, (snap)=>{
-      cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
-    });
-  }
-}
-
-/* ===== Render ===== */
-function filteredSorted(){
-  let list = cache.slice();
-  const queryStr = q.value.trim().toLowerCase();
-  if(queryStr) list = list.filter(x=>(x.title||'').toLowerCase().includes(queryStr) || (x.desc||'').toLowerCase().includes(queryStr));
-  const mode = sort.value;
-  if(mode==='price_asc') list.sort((a,b)=>a.price-b.price);
-  else if(mode==='price_desc') list.sort((a,b)=>b.price-a.price);
-  else if(mode==='title') list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-  else list.sort((a,b)=> (b.ts?.toMillis?.() ?? b.ts) - (a.ts?.toMillis?.() ?? a.ts));
-  return list;
-}
-
-function render(){
-  const list = filteredSorted();
-  grid.innerHTML='';
-  emptyNote.style.display = list.length ? 'none' : 'block';
-  list.forEach(it=>{
-    const dateStr = (it.ts?.toDate?.() ? it.ts.toDate() : new Date(it.ts)).toLocaleDateString('fa-IR');
-    const isOwner = currentUser && it.uid === currentUser.uid;
-    const el=document.createElement('div'); el.className='item';
-    el.innerHTML = `
-      <img class="thumb" alt="photo" src="${it.photoURL}">
-      <div class="content">
-        <h3>${it.title? escapeHtml(it.title) : 'بدون عنوان'}</h3>
-        <div class="meta">
-          <div class="price">${formatPrice(it.price)} <span class="badge">تومان</span></div>
-          <div class="badge">${dateStr}</div>
-        </div>
-        ${it.desc ? `<p class="note" style="margin-top:8px">${escapeHtml(it.desc)}</p>` : ``}
-        <div class="controls">
-          ${isOwner ? `<button class="btn-outline" data-del="${it.id}">حذف</button>` : ``}
-          <a class="btn-outline" href="${it.photoURL}" download="photo.jpg">دانلود عکس</a>
-        </div>
-      </div>`;
-    grid.appendChild(el);
-  });
-
-  grid.querySelectorAll('[data-del]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const id = btn.getAttribute('data-del');
-      if(!id || !currentUser) return;
-      await deleteDoc(doc(db, 'items', id));
-    });
-  });
-}
-
-q.addEventListener('input', render);
-sort.addEventListener('change', render);
-
-/* ===== Add new item ===== */
-addBtn.addEventListener('click', async ()=>{
-  err.style.display='none';
-  if(!currentUser){ err.textContent='ابتدا وارد شوید.'; err.style.display='block'; return; }
-
-  const file = inpPhoto.files && inpPhoto.files[0];
-  const priceNum = toNumber(inpPrice.value);
-  if(!file || !isFinite(priceNum) || priceNum<=0){
-    err.textContent='عکس و قیمت الزامی است.'; err.style.display='block'; return;
-  }
-  try{
-    // compress locally
-    const dataURL = await compressImage(file);
-    const blob    = await dataURLtoBlob(dataURL);
-
-    // upload to Storage under user path
-    const itemId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random());
-    const path   = `users/${currentUser.uid}/items/${itemId}.jpg`;
-    const r      = ref(stg, path);
-    await uploadBytes(r, blob, { contentType: 'image/jpeg' });
-    const url    = await getDownloadURL(r);
-
-    // save Firestore doc
-    await addDoc(collection(db, 'items'), {
-      uid: currentUser.uid,
-      title: (inpTitle.value||'').trim(),
-      price: Math.round(priceNum),
-      desc: (inpDesc.value||'').trim(),
-      photoURL: url,
-      status: isPublic.checked ? 'public' : 'private',
-      ts: serverTimestamp()
-    });
-
-    // reset form
-    inpTitle.value=''; inpPrice.value=''; inpDesc.value=''; inpPhoto.value='';
-  }catch(e){
-    err.textContent='خطا در ثبت آگهی: '+(e.message||e);
-    err.style.display='block';
-  }
-});
-
-/* ===== Auth state ===== */
-onAuthStateChanged(auth, (user)=>{
-  currentUser = user || null;
-  showAuthUI(currentUser);
-  bindFeed();
-});
-
-/* ===== boot ===== */
-refreshTabsUI();
-bindFeed();
-</script>
+<!-- ===== App Scripts ===== -->
+<script type="module" src="js/main.js"></script>
 </body>
 </html>
