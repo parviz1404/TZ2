@@ -1,150 +1,163 @@
-import { db, stg, collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, ref, uploadBytes, getDownloadURL } from './firebase.js';
-import { toNumber, formatPrice, escapeHtml, compressImage, dataURLtoBlob } from './utils.js';
-import { setupAuth, getCurrentUser } from './auth.js';
+import { setupUI } from './ui.js';
+import { setupAuth } from './auth.js';
+import { db, stg } from './firebase.js';
+import { on, compressImage, dataURLtoBlob, toNumber } from './helpers.js';
+import {
+    collection,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    addDoc,
+    serverTimestamp,
+    deleteDoc,
+    doc
+} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import {
+    ref,
+    uploadBytes,
+    getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
-/* ===== DOM refs ===== */
-const $=id=>document.getElementById(id);
-const inpTitle=$('title'), inpPrice=$('price'), inpPhoto=$('photo'), inpDesc=$('desc'), isPublic=$('isPublic');
-const addBtn=$('addBtn'), err=$('err');
-const q=$('q'), sort=$('sort'), grid=$('grid'), emptyNote=$('emptyNote');
-const tabPublic=$('tabPublic'), tabMine=$('tabMine');
 
-/* ===== Feed (public | mine) ===== */
-let FEED = 'public';
-let unsub = null;
-let cache = [];
+document.addEventListener('DOMContentLoaded', () => {
+    const ui = setupUI();
+    let currentUser = null;
+    let unsub = null;
+    let cache = [];
+    let FEED = 'public';
 
-function refreshTabsUI(){
-  tabPublic.classList.toggle('btn', FEED==='public');
-  tabPublic.classList.toggle('btn-outline', FEED!=='public');
-  tabMine.classList.toggle('btn', FEED==='mine');
-  tabMine.classList.toggle('btn-outline', FEED!=='mine');
-}
-
-function bindFeed(){
-  if(unsub){ unsub(); unsub=null; }
-  cache = [];
-  render();
-
-  const currentUser = getCurrentUser();
-
-  if(FEED === 'public'){
-    const col = collection(db, 'items');
-    const qy  = query(col, where('status','==','public'), orderBy('ts','desc'));
-    unsub = onSnapshot(qy, (snap)=>{
-      cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
-    });
-  }else{
-    if(!currentUser){ cache=[]; render(); return; }
-    const col = collection(db, 'items');
-    const qy  = query(col, where('uid','==', currentUser.uid), orderBy('ts','desc'));
-    unsub = onSnapshot(qy, (snap)=>{
-      cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
-    });
-  }
-}
-
-tabPublic.addEventListener('click', ()=>{ FEED='public'; refreshTabsUI(); bindFeed(); });
-tabMine.addEventListener('click',   ()=>{ FEED='mine';   refreshTabsUI(); bindFeed(); });
-
-/* ===== Render ===== */
-function filteredSorted(){
-  let list = cache.slice();
-  const queryStr = q.value.trim().toLowerCase();
-  if(queryStr) list = list.filter(x=>(x.title||'').toLowerCase().includes(queryStr) || (x.desc||'').toLowerCase().includes(queryStr));
-  const mode = sort.value;
-  if(mode==='price_asc') list.sort((a,b)=>a.price-b.price);
-  else if(mode==='price_desc') list.sort((a,b)=>b.price-a.price);
-  else if(mode==='title') list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-  else list.sort((a,b)=> (b.ts?.toMillis?.() ?? b.ts) - (a.ts?.toMillis?.() ?? a.ts));
-  return list;
-}
-
-function render(){
-  const list = filteredSorted();
-  grid.innerHTML='';
-  emptyNote.style.display = list.length ? 'none' : 'block';
-  const currentUser = getCurrentUser();
-  list.forEach(it=>{
-    const dateStr = (it.ts?.toDate?.() ? it.ts.toDate() : new Date(it.ts)).toLocaleDateString('fa-IR');
-    const isOwner = currentUser && it.uid === currentUser.uid;
-    const el=document.createElement('div'); el.className='item';
-    el.innerHTML = `
-      <img class="thumb" alt="photo" src="${it.photoURL}">
-      <div class="content">
-        <h3>${it.title? escapeHtml(it.title) : 'بدون عنوان'}</h3>
-        <div class="meta">
-          <div class="price">${formatPrice(it.price)} <span class="badge">تومان</span></div>
-          <div class="badge">${dateStr}</div>
-        </div>
-        ${it.desc ? `<p class="note" style="margin-top:8px">${escapeHtml(it.desc)}</p>` : ``}
-        <div class="controls">
-          ${isOwner ? `<button class="btn-outline" data-del="${it.id}">حذف</button>` : ``}
-          <a class="btn-outline" href="${it.photoURL}" download="photo.jpg">دانلود عکس</a>
-        </div>
-      </div>`;
-    grid.appendChild(el);
-  });
-
-  grid.querySelectorAll('[data-del]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const id = btn.getAttribute('data-del');
-      const currentUser = getCurrentUser();
-      if(!id || !currentUser) return;
-      await deleteDoc(doc(db, 'items', id));
-    });
-  });
-}
-
-q.addEventListener('input', render);
-sort.addEventListener('change', render);
-
-/* ===== Add new item ===== */
-addBtn.addEventListener('click', async ()=>{
-  err.style.display='none';
-  const currentUser = getCurrentUser();
-  if(!currentUser){ err.textContent='ابتدا وارد شوید.'; err.style.display='block'; return; }
-
-  const file = inpPhoto.files && inpPhoto.files[0];
-  const priceNum = toNumber(inpPrice.value);
-  if(!file || !isFinite(priceNum) || priceNum<=0){
-    err.textContent='عکس و قیمت الزامی است.'; err.style.display='block'; return;
-  }
-  try{
-    const dataURL = await compressImage(file);
-    const blob    = await dataURLtoBlob(dataURL);
-
-    const itemId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random());
-    const path   = `users/${currentUser.uid}/items/${itemId}.jpg`;
-    const r      = ref(stg, path);
-    await uploadBytes(r, blob, { contentType: 'image/jpeg' });
-    const url    = await getDownloadURL(r);
-
-    await addDoc(collection(db, 'items'), {
-      uid: currentUser.uid,
-      title: (inpTitle.value||'').trim(),
-      price: Math.round(priceNum),
-      desc: (inpDesc.value||'').trim(),
-      photoURL: url,
-      status: isPublic.checked ? 'public' : 'private',
-      ts: serverTimestamp()
+    const auth = setupAuth(ui, (user) => {
+        currentUser = user;
+        bindFeed();
     });
 
-    inpTitle.value=''; inpPrice.value=''; inpDesc.value=''; inpPhoto.value='';
-  }catch(e){
-    err.textContent='خطا در ثبت آگهی: '+(e.message||e);
-    err.style.display='block';
-  }
+    function render() {
+        let list = cache.slice();
+        const queryStr = document.querySelector('#q').value.trim().toLowerCase();
+        if(queryStr) list = list.filter(x=>(x.title||'').toLowerCase().includes(queryStr) || (x.desc||'').toLowerCase().includes(queryStr));
+
+        const mode = document.querySelector('#sort').value;
+        if(mode==='price_asc') list.sort((a,b)=>a.price-b.price);
+        else if(mode==='price_desc') list.sort((a,b)=>b.price-a.price);
+        else if(mode==='title') list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+        else list.sort((a,b)=> (b.ts?.toMillis?.() ?? b.ts) - (a.ts?.toMillis?.() ?? a.ts));
+
+        ui.renderItems(list, currentUser);
+    }
+
+    function bindFeed() {
+        if (unsub) {
+            unsub();
+            unsub = null;
+        }
+        cache = [];
+        render();
+
+        let qy;
+        const itemsCollection = collection(db, 'items');
+
+        if (FEED === 'public') {
+            qy = query(itemsCollection, where('status', '==', 'public'), orderBy('ts', 'desc'));
+        } else {
+            if (!currentUser) {
+                cache = [];
+                render();
+                return;
+            }
+            qy = query(itemsCollection, where('uid', '==', currentUser.uid), orderBy('ts', 'desc'));
+        }
+
+        unsub = onSnapshot(qy, (snap) => {
+            cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            render();
+        }, (error) => {
+            console.error("Error fetching data from Firestore:", error);
+            ui.showError("خطا در دریافت اطلاعات از سرور.");
+        });
+    }
+
+    on('#addBtn', 'click', async () => {
+        if (!currentUser) {
+            ui.showError('برای ثبت آگهی، ابتدا وارد شوید.');
+            return;
+        }
+
+        const formValues = ui.getFormValues();
+        const priceNum = toNumber(formValues.price);
+
+        if (!formValues.title || !isFinite(priceNum) || priceNum <= 0 || !formValues.photo) {
+            ui.showError('لطفاً عنوان، قیمت معتبر و عکس را وارد کنید.');
+            return;
+        }
+
+        try {
+            const dataURL = await compressImage(formValues.photo);
+            const blob = await dataURLtoBlob(dataURL);
+
+            const itemId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+            const path = `users/${currentUser.uid}/items/${itemId}.jpg`;
+            const fileRef = ref(stg, path);
+
+            await uploadBytes(fileRef, blob, { contentType: 'image/jpeg' });
+            const url = await getDownloadURL(fileRef);
+
+            await addDoc(collection(db, 'items'), {
+                uid: currentUser.uid,
+                title: formValues.title,
+                price: priceNum,
+                desc: formValues.desc,
+                photoURL: url,
+                status: formValues.isPublic ? 'public' : 'private',
+                ts: serverTimestamp()
+            });
+
+            ui.clearForm();
+        } catch (e) {
+            ui.showError('خطا در ثبت آگهی: ' + (e.message || e));
+        }
+    });
+
+    function refreshTabsUI(){
+        document.querySelector('#tabPublic').classList.toggle('btn', FEED==='public');
+        document.querySelector('#tabPublic').classList.toggle('btn-outline', FEED!=='public');
+        document.querySelector('#tabMine').classList.toggle('btn', FEED==='mine');
+        document.querySelector('#tabMine').classList.toggle('btn-outline', FEED!=='mine');
+    }
+
+    on('#tabPublic', 'click', () => {
+        FEED = 'public';
+        refreshTabsUI();
+        bindFeed();
+    });
+
+    on('#tabMine', 'click', () => {
+        if (!currentUser) {
+            ui.showModal();
+            return;
+        }
+        FEED = 'mine';
+        refreshTabsUI();
+        bindFeed();
+    });
+
+    on('#q', 'input', render);
+    on('#sort', 'change', render);
+
+    document.getElementById('grid').addEventListener('click', async (e) => {
+        if (e.target.matches('[data-del]')) {
+            const id = e.target.getAttribute('data-del');
+            if (!id || !currentUser) return;
+            if (confirm('آیا از حذف این آگهی مطمئن هستید؟')) {
+                try {
+                    await deleteDoc(doc(db, 'items', id));
+                } catch (error) {
+                    ui.showError('خطا در حذف آگهی.');
+                }
+            }
+        }
+    });
+
+    refreshTabsUI();
+    bindFeed();
 });
-
-/* ===== Auth state change handler ===== */
-function onAuthStateChange(user) {
-  bindFeed();
-}
-
-/* ===== boot ===== */
-setupAuth(onAuthStateChange);
-refreshTabsUI();
-bindFeed();
