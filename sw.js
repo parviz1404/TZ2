@@ -1,5 +1,5 @@
-/* Rasta Bazaar Service Worker (sw.js) */
-const CACHE_NAME = 'rasta-bazaar-v1';
+/* Rasta Market Service Worker (sw.js) */
+const CACHE_NAME = 'rasta-market-v1';
 const BASE = self.registration.scope;
 const PRECACHE_URLS = ['index.html','manifest.json','icon-192.png','icon-512.png','icon-180.png'].map(p => new URL(p, BASE).toString());
 self.addEventListener('install', (event) => {
