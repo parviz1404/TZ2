@@ -15,42 +15,67 @@ export function setupAuth(ui, onAuthChange) {
   on('#logoutBtn', 'click', () => signOut(auth));
   on('#authClose', 'click', () => ui.hideModal());
 
-  on('#authOk', 'click', async () => {
-    const phoneInput = document.querySelector('#phone');
-    const raw = phoneInput.value.trim();
+  const q = (sel) => document.querySelector(sel);
+
+  on('#continueBtn', 'click', () => {
+    const raw = q('#phone').value.trim();
     const digits = raw.replace(/\D+/g,'');
 
     if(digits.length < 10){
-        ui.showAuthError('شماره معتبر نیست.');
+        ui.showAuthError('شماره موبایل معتبر وارد کنید.');
         return;
     }
 
-    const phone = normalizePhone(raw);
-    const pass = prompt('رمز عبور را وارد کنید (حداقل ۶ کاراکتر):');
+    q('#phone-step').style.display = 'none';
+    q('#password-step').style.display = 'block';
+    q('#continueBtn').style.display = 'none';
+    q('#loginSubmitBtn').style.display = 'block';
+    q('#password').focus();
+    ui.showAuthError(''); // Clear previous errors
+  });
 
-    if(!pass || pass.length < 6){
-        ui.showAuthError('رمز عبور حداقل ۶ کاراکتر.');
+  on('#loginSubmitBtn', 'click', async () => {
+    const phone = normalizePhone(q('#phone').value.trim());
+    const pass = q('#password').value.trim();
+
+    if (pass.length < 6) {
+        ui.showAuthError('رمز عبور باید حداقل ۶ کاراکتر باشد.');
         return;
     }
 
     const email = phoneToFakeEmail(phone);
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      ui.hideModal();
-    } catch(e) {
-      if(e?.code === 'auth/user-not-found'){
-        try {
-          const { user } = await createUserWithEmailAndPassword(auth, email, pass);
-          await updateProfile(user, { displayName: phone });
-          ui.hideModal();
-        } catch(err2) {
-          ui.showAuthError('ثبت‌نام ناموفق: '+(err2.message||err2));
+        await signInWithEmailAndPassword(auth, email, pass);
+        ui.hideModal();
+        resetModal();
+    } catch (e) {
+        if (e?.code === 'auth/user-not-found') {
+            try {
+                const { user } = await createUserWithEmailAndPassword(auth, email, pass);
+                await updateProfile(user, { displayName: phone });
+                ui.hideModal();
+                resetModal();
+            } catch (err2) {
+                ui.showAuthError(`خطا در ثبت‌نام: ${err2.code}`);
+            }
+        } else {
+            ui.showAuthError(`خطا در ورود: ${e.code}`);
         }
-      } else {
-        ui.showAuthError('ورود ناموفق: '+(e.message||e));
-      }
     }
   });
+
+  function resetModal() {
+    q('#phone-step').style.display = 'block';
+    q('#password-step').style.display = 'none';
+    q('#continueBtn').style.display = 'block';
+    q('#loginSubmitBtn').style.display = 'none';
+    q('#phone').value = '';
+    q('#password').value = '';
+    ui.showAuthError('');
+  }
+
+  // Also reset modal on close
+  on('#authClose', 'click', resetModal);
 
   onAuthStateChanged(auth, (user) => {
     currentUser = user || null;

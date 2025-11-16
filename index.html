@@ -187,17 +187,29 @@ label{font-size:14px; font-weight:700; color:var(--fg); margin-bottom:6px; displ
       <button id="authClose" style="background:none;border:0;font-size:18px;cursor:pointer">✖</button>
     </div>
     <div class="bd">
-      <label for="phone" style="display:block; font-weight:800; margin-bottom:6px">شماره موبایل</label>
-      <div class="control">
-        <input id="phone" type="text" inputmode="tel" placeholder="مثلاً 09123456789" style="direction:ltr; text-align:left">
+      <div id="phone-step">
+        <label for="phone" style="display:block; font-weight:800; margin-bottom:6px">شماره موبایل</label>
+        <div class="control">
+          <input id="phone" type="text" inputmode="tel" placeholder="مثلاً 09123456789" style="direction:ltr; text-align:left">
+        </div>
+        <p id="authNote" class="note" style="margin-top:8px">
+          برای ورود یا ثبت‌نام، شماره موبایل خود را وارد کنید.
+        </p>
       </div>
-      <p id="authNote" class="note" style="margin-top:8px">
-        ورود/ثبت‌نام با <strong>موبایل + رمز عبور</strong> (بدون پیامک). پس از واردکردن شماره، رمز از شما پرسیده می‌شود.
-      </p>
-      <div id="authErr" class="err">شماره معتبر وارد کنید (حداقل 10 رقم).</div>
+      <div id="password-step" style="display:none;">
+        <label for="password" style="display:block; font-weight:800; margin-bottom:6px">رمز عبور</label>
+        <div class="control">
+          <input id="password" type="password" placeholder="حداقل ۶ کاراکتر" style="direction:ltr; text-align:left">
+        </div>
+        <p class="note" style="margin-top:8px">
+          اگر حساب کاربری ندارید، با همین رمز یک حساب جدید برای شما ساخته می‌شود.
+        </p>
+      </div>
+      <div id="authErr" class="err"></div>
     </div>
     <div class="ft">
-      <button id="authOk" class="btn">ادامه</button>
+      <button id="continueBtn" class="btn">ادامه</button>
+      <button id="loginSubmitBtn" class="btn" style="display:none;">ورود / ثبت‌نام</button>
     </div>
   </div>
 </div>
